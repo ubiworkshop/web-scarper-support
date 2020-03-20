@@ -1,8 +1,8 @@
-const rp = require('request-promise');
+const request = require('request-promise');
 let url = process.argv[2];
 
 if (url !== undefined) {
-    const res = rp(url, (error, response, html) => {
+    const res = request(url, (error, response, html) => {
         if (!error) {
             console.log(response.statusCode);
         }
