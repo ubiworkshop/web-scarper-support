@@ -3,10 +3,16 @@ const otcsv = require('objects-to-csv');
 const cheerio = require('cheerio');
 
 const search_terms = process.argv[2];
-const location_terms = process.argv[3];
+
+const state = process.argv[3];
 const pageStart = process.argv[4];
 const pageID = process.argv[5];
+const pageEnd = process.argv[6];
+const city = process.argv[7];
 const baseURL = 'https://www.yellowpages.com';
+
+const location_terms = city == undefined ? state : `${city}+${state}`;
+
 const searchURL = '/search?search_terms=' + search_terms +
   '&geo_location_terms=' + location_terms + '&page=' + pageID;
 
@@ -21,7 +27,7 @@ const getCompanies = async () => {
     const link = baseURL + e.attribs.href;
 
     const innerHtml = await rp(link).catch(e => {
-      console.log('error while querying innerHtml');
+      console.log('');
     });
 
     const website = cheerio('a.primary-btn', innerHtml).prop('href');
@@ -29,7 +35,7 @@ const getCompanies = async () => {
     const name = e.children[0].data || cheerio('h1', innerHtml).text();
     const phone = cheerio('p.phone', innerHtml).text();
 
-    //trucate unnecessary url
+    //truncate unnecessary url
     let website_str = website + '';
     if (website_str.includes('.com/')) {
       website_str = website_str.split('.com/')[0];
@@ -68,7 +74,7 @@ const getCompanies = async () => {
       name,
       phone,
       website_str,
-      email,
+      email: email,
       emailYP: emailYP ? emailYP.replace('mailto:', '') : ''
     }
   }).get();
@@ -80,19 +86,20 @@ getCompanies()
     const transformed = new otcsv(result);
     let fileNo = 1;
 
-    //check if file of same name already exists
-    //if yes, store results of this set of queries in new file
+    //giving file friendly name
+    const location = city !== undefined ? city + "-" + state : state;
+
+    /*check if file of same name already exists
+      if yes, store results of this set of queries in new file*/
     const fs = require('fs')
-    let path = './' + search_terms + '@' + location_terms
-      + fileNo.toString() + '.csv';
+    let path = `./${search_terms}@${location}[${pageStart}-${pageEnd}]_${fileNo}.csv`;
 
     function isFileExisting(path) {
       try {
         if (fs.existsSync(path)) {
           console.log('file exists: ' + path);
           fileNo++;
-          path = './' + search_terms + '@' + location_terms
-            + fileNo.toString() + '.csv';
+          path = `./${search_terms}@${location}[${pageStart}-${pageEnd}]_${fileNo}.csv`;
           isFileExisting(path);
         } else {
           console.log('file does not exist: ' + path);
@@ -104,16 +111,15 @@ getCompanies()
 
     //checking for page iteration (1-n)
     const iteration = parseInt(pageID) - parseInt(pageStart);
-    if (iteration === 0) {
+    console.log(iteration);
+    if (iteration == 0) {
       isFileExisting(path);
-      path = './' + search_terms + '@' + location_terms
-        + fileNo.toString() + '.csv';
+      path = `./${search_terms}@${location}[${pageStart}-${pageEnd}]_${fileNo}.csv`;
       transformed.toDisk(path, { append: true });
     } else {
       isFileExisting(path);
       fileNo--;
-      path = './' + search_terms + '@' + location_terms
-        + fileNo.toString() + '.csv';
+      path = `./${search_terms}@${location}[${pageStart}-${pageEnd}]_${fileNo}.csv`;
       transformed.toDisk(path, { append: true });
     }
   })
