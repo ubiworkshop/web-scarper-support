@@ -2,7 +2,7 @@ const rp = require('request-promise');
 const otcsv = require('objects-to-csv');
 const cheerio = require('cheerio');
 
-const search_terms = process.argv[2];
+let search_terms = process.argv[2];
 
 const state = process.argv[3];
 const pageStart = process.argv[4];
@@ -11,7 +11,8 @@ const pageEnd = process.argv[6];
 const city = process.argv[7];
 const baseURL = 'https://www.yellowpages.com';
 
-const location_terms = city == undefined ? state : `${city}+${state}`;
+const location_terms = state == undefined ? city :
+  city == undefined ? state : `${city}+${state}`;
 
 const searchURL = '/search?search_terms=' + search_terms +
   '&geo_location_terms=' + location_terms + '&page=' + pageID;
@@ -27,7 +28,7 @@ const getCompanies = async () => {
     const link = baseURL + e.attribs.href;
 
     const innerHtml = await rp(link).catch(e => {
-      console.log('');
+      console.log('error while querying innerHtml');
     });
 
     const website = cheerio('a.primary-btn', innerHtml).prop('href');
@@ -46,6 +47,7 @@ const getCompanies = async () => {
     }
 
     website_str = website_str === 'undefined' ? '' : website_str;
+    
 
     //extract email if its not already fetched from yellow pages
     if (emailYP == '' || emailYP == undefined) {
@@ -87,7 +89,13 @@ getCompanies()
     let fileNo = 1;
 
     //giving file friendly name
-    const location = city !== undefined ? city + "-" + state : state;
+    let location = city !== undefined ? city + "-" + state : state;
+
+    //replacing + with -
+    search_terms = search_terms.replace(/[+]/g,'-');
+    location = location.replace(/[+]/g, '-');
+    
+    console.log(location,search_terms);
 
     /*check if file of same name already exists
       if yes, store results of this set of queries in new file*/
@@ -97,12 +105,9 @@ getCompanies()
     function isFileExisting(path) {
       try {
         if (fs.existsSync(path)) {
-          console.log('file exists: ' + path);
           fileNo++;
           path = `./${search_terms}@${location}[${pageStart}-${pageEnd}]_${fileNo}.csv`;
           isFileExisting(path);
-        } else {
-          console.log('file does not exist: ' + path);
         }
       } catch (err) {
         console.log(err);
@@ -111,7 +116,6 @@ getCompanies()
 
     //checking for page iteration (1-n)
     const iteration = parseInt(pageID) - parseInt(pageStart);
-    console.log(iteration);
     if (iteration == 0) {
       isFileExisting(path);
       path = `./${search_terms}@${location}[${pageStart}-${pageEnd}]_${fileNo}.csv`;
@@ -123,7 +127,6 @@ getCompanies()
       transformed.toDisk(path, { append: true });
     }
   })
-  .then(() => console.log('SUCCESSFULLY COMPLETED THE WEB SCRAPING SAMPLE'))
   .catch(e => {
     console.log("failed: ", e);
   })
