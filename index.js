@@ -11,13 +11,18 @@ const pageEnd = process.argv[6];
 const city = process.argv[7];
 const baseURL = 'https://www.yellowpages.com';
 
-const location_terms = state == undefined ? city :
-  city == undefined ? state : `${city}+${state}`;
+let location_terms;
+if (city == undefined)
+  location_terms = state;
+else if (state == undefined)
+  location_terms = city;
+else
+  location_terms = `${city}+${state}`;
 
 const searchURL = '/search?search_terms=' + search_terms +
   '&geo_location_terms=' + location_terms + '&page=' + pageID;
 
-var email;
+let email;
 
 const getCompanies = async () => {
   const html = await rp(baseURL + searchURL).catch(e => {
@@ -28,7 +33,7 @@ const getCompanies = async () => {
     const link = baseURL + e.attribs.href;
 
     const innerHtml = await rp(link).catch(e => {
-      console.log('error while querying innerHtml');
+      console.log(e);
     });
 
     const website = cheerio('a.primary-btn', innerHtml).prop('href');
@@ -48,7 +53,6 @@ const getCompanies = async () => {
 
     website_str = website_str === 'undefined' ? '' : website_str;
     
-
     //extract email if its not already fetched from yellow pages
     if (emailYP == '' || emailYP == undefined) {
       const emailExtractor = require('node-email-extractor').default;
@@ -94,8 +98,6 @@ getCompanies()
     //replacing + with -
     search_terms = search_terms.replace(/[+]/g,'-');
     location = location.replace(/[+]/g, '-');
-    
-    console.log(location,search_terms);
 
     /*check if file of same name already exists
       if yes, store results of this set of queries in new file*/
