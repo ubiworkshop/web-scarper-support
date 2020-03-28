@@ -11,6 +11,3 @@ Step 3: Type command "npm install", let the dependecies install.
 (You'll require an active internet connection for this)
 
 Step 4: Open WebScraperGUI.exe and start scraping!!
-
-Thats it.
-
