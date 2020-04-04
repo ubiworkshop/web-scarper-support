@@ -24,6 +24,11 @@ const searchURL = '/search?search_terms=' + search_terms +
 
 let email;
 
+//max time allowed per page = 50s
+setTimeout(()=>{
+  process.exit(0);
+}, 50000);
+
 const getCompanies = async () => {
   const html = await rp(baseURL + searchURL).catch(e => {
     console.log('error while querying site');
