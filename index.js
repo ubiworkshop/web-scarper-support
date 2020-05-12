@@ -45,6 +45,7 @@ const getCompanies = async () => {
     let emailYP = cheerio('a.email-business', innerHtml).prop('href');
     const name = e.children[0].data || cheerio('h1', innerHtml).text();
     const phone = cheerio('p.phone', innerHtml).text();
+    const address = cheerio('address', innerHtml).text();
 
     //truncate unnecessary url
     let website_str = website + '';
@@ -86,7 +87,8 @@ const getCompanies = async () => {
       phone,
       website_str,
       email: email,
-      emailYP: emailYP ? emailYP.replace('mailto:', '') : ''
+      emailYP: emailYP ? emailYP.replace('mailto:', '') : '',
+      address
     }
   }).get();
   return Promise.all(businessMap);
